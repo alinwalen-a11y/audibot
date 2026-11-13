@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AUDITOR-BOT 🤖</title>
+<style>
+body{margin:0;background:#e8f8f8;font-family:Arial;padding:16px}
+.wrap{max-width:650px;margin:0 auto}
+h1{color:#00b8a9;text-align:center}
+.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+textarea{width:100%;height:180px;background:#111;color:#7dff9a;padding:12px;border-radius:10px;font-family:monospace;font-size:13px;border:0;outline:none}
+button{background:#00b8a9;color:#fff;border:0;padding:13px;border-radius:10px;font-weight:900;font-size:16px;width:100%;cursor:pointer}
+button:active{transform:scale(.98)}
+.hallazgo{background:#fff5f5;border:1px solid #ffcccc;padding:10px;border-radius:10px;margin-top:10px}
+.hallazgo b{color:#d32f2f}
+.ok{background:#e8f5e9;border:1px solid #a5d6a7;padding:12px;border-radius:10px;margin-top:10px;color:#2e7d32;font-weight:800}
+code{background:#eee;padding:2px 6px;border-radius:5px}
+.ej{font-size:12px;color:#666;text-align:center;margin-top:8px}
+.ej span{color:#00b8a9;cursor:pointer;font-weight:800}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>AUDITOR-BOT 🤖</h1>
+<p style="text-align:center;color:#666;margin-top:-10px">Agente Autónomo de Auditoría - DevSecOps</p>
+
+<div class="card">
+<h3 style="margin:0 0 8px">1. Pega el código del Pull Request</h3>
+<textarea id="codigo">api_key = "sk-12345-secreto"
+password = "admin123"
+query = "SELECT * FROM users WHERE id = " + user_id
+# TODO: arreglar esto luego
+print("debug")
+for i in range(100):
+  for j in range(100):
+    print(i*j)</textarea>
+<div class="ej">¿No tienes código? Dale clic aquí 👉 <span onclick="ejemploLimpio()">Probar código LIMPIO</span> | <span onclick="ejemploMalo()">Probar código MALO</span></div>
+</div>
+
+<button onclick="auditar()">🔍 AUDITAR CÓDIGO AHORA</button>
+
+<div class="card">
+<h3 style="margin:0 0 8px">2. Reporte del Auditor</h3>
+<div id="resultado"><p style="color:#999">Dale a AUDITAR y aquí sale el reporte como en un Pull Request de GitHub...</p></div>
+</div>
+
+<div class="card">
+<h3 style="margin:0">📊 Benchmark</h3>
+<p style="font-size:13px;color:#666">Tu benchmark de la terminal:</p>
+<div style="background:#e0f7f7;padding:10px;border-radius:10px;font-weight:800">Lento: 66.01ms | Rápido: 59.43ms<br><span style="color:#00b8a9;font-size:13px">✅ El código rápido es 10% más eficiente</span></div>
+</div>
+</div>
+
+<script>
+const PATRONES=[
+{t:"🔑 API Key expuesta",r:/api_key\s*=\s*["'][^"']+["']/i,s:"Usa variables de entorno: os.getenv('API_KEY')"},
+{t:"🔑 Password expuesta",r:/password\s*=\s*["'][^"']+["']/i,s:"Nunca dejes passwords en el código. Usa archivo .env"},
+{t:"🔑 Token de GitHub",r:/ghp_[a-zA-Z0-9]{20,}/,s:"Regenera tu token, ya está comprometido"},
+{t:"💉 SQL Injection - PELIGRO CRÍTICO",r:/execute\(.*\+|query.*\+.*user|SELECT.*\+/i,s:"Usa queries parametrizadas: cursor.execute('SELECT ... WHERE id=%s', (id,))"},
+{t:"⚠️ TODO olvidado",r:/TODO|FIXME|XXX/i,s:"Resuelve esto antes de subir a producción"},
+{t:"🐢 Bucle dentro de bucle - O(n²)",r:/for.*:\s*\n.*for.*:/,s:"Tienes un bucle dentro de otro, esto es muy lento. Optimiza."},
+{t:"🖨️ Print / console.log olvidado",r:/print\(|console\.log/,s:"Quita los prints de debug antes de producción"},
+];
+function auditar(){
+  let codigo=document.getElementById('codigo').value;
+  let res=document.getElementById('resultado');
+  let hall=[];
+  PATRONES.forEach(p=>{
+    let m=codigo.match(p.r);
+    if(m) hall.push({...p,codigo:m[0]});
+  });
+  if(hall.length==0){
+    res.innerHTML=`<div class="ok">✅ AUDITOR-BOT: Todo limpio!<br>No encontré vulnerabilidades. Puedes hacer merge. 🎉</div>`;
+  } else {
+    let html=`<div style="font-weight:900;color:#d32f2f">🚨 AUDITOR-BOT encontró ${hall.length} problema(s)</div>`;
+    hall.forEach(h=>{
+      html+=`<div class="hallazgo"><b>${h.t}</b><br><code>${h.codigo}</code><br><span style="font-size:13px">💡 Sugerencia: ${h.s}</span></div>`;
+    });
+    html+=`<p style="font-size:12px;color:#888">---<br>Revisado automáticamente por AUDITOR-BOT 🤖 | Simulación de comentario en Pull Request</p>`;
+    res.innerHTML=html;
+  }
+}
+function ejemploLimpio(){document.getElementById('codigo').value=`import os\napi_key = os.getenv('API_KEY')\ncursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))\nprint("todo bien")`;auditar();}
+function ejemploMalo(){document.getElementById('codigo').value=`api_key = "sk-12345-secreto"\npassword = "admin123"\nquery = "SELECT * FROM users WHERE id = " + user_id\n# TODO: arreglar esto luego\nprint("debug")`;auditar();}
+</script>
+</body>
+</html>
